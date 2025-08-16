@@ -1,107 +1,86 @@
 // src/pages/ResultPage.jsx
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import API from "../utils/api";
-import React from "react";
 
 export default function ResultPage() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
-  const category = searchParams.get("category") || "physical";
-  const count = searchParams.get("count") || 5;
-  const target = searchParams.get("target") || "";
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch questions from Gemini API route
   useEffect(() => {
-    async function fetchQuestions() {
+    async function fetchResult() {
       try {
-        const { data } = await API.get(
-          `/questions?category=${category}&count=${count}&target=${target}`
-        );
-        setQuestions(data.questions);
+        const { data } = await API.get(`/results/${id}`);
+        setResult(data);
       } catch (err) {
-        console.error("Error fetching questions:", err);
+        console.error("Error fetching result:", err);
+        setError("Could not fetch your result. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
-    fetchQuestions();
-  }, [category, count, target]);
+    fetchResult();
+  }, [id]);
 
-  // Handle selecting an answer
-  function handleAnswer(qIndex, option) {
-    setAnswers(prev => ({ ...prev, [qIndex]: option }));
-  }
+  if (loading) return <p className="text-center">Loading result...</p>;
+  if (error) return <p className="text-center text-red-600">{error}</p>;
+  if (!result) return <p className="text-center">Result not found</p>;
 
-  // Submit answers to /results
-  async function handleSubmit() {
-    try {
-      // Format answers keyed by question index
-      const formattedAnswers = {};
-      questions.forEach((q, index) => {
-        formattedAnswers[q.question] = answers[index] || "";
-      });
+  // Scale score to 10
+  const scoreOutOf10 = Math.round((result.score / result.total) * 10);
 
-      const { data } = await API.post("/results", {
-        category,
-        answers: formattedAnswers
-      });
-
-      setResult(data);
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Error submitting results:", err);
-    }
-  }
-
-  if (!questions.length && !submitted) return <p>Loading quiz...</p>;
+  // Generate tips based on score
+  const tips =
+    scoreOutOf10 >= 8
+      ? ["Excellent! Keep practicing and stay consistent."]
+      : scoreOutOf10 >= 5
+      ? ["Good job! Try reviewing the questions you missed.", "Practice regularly to boost your score."]
+      : ["Don’t worry! Focus on the basics first.", "Spend 15–20 minutes daily on small exercises.", "Try again with fewer questions to build confidence."];
 
   return (
-    <div className="max-w-xl mx-auto p-4">
-      {!submitted ? (
-        <>
-          <h2 className="text-2xl font-bold mb-4">
-            {category.charAt(0).toUpperCase() + category.slice(1)} Health Quiz
-          </h2>
-          {questions.map((q, index) => (
-            <div key={index} className="mb-6 border p-3 rounded">
-              <p className="font-medium mb-2">
-                {index + 1}. {q.question}
-              </p>
-              {q.options.map((option, i) => (
-                <label key={i} className="block">
-                  <input
-                    type="radio"
-                    name={`q-${index}`}
-                    value={option}
-                    checked={answers[index] === option}
-                    onChange={() => handleAnswer(index, option)}
-                  />
-                  <span className="ml-2">{option}</span>
-                </label>
-              ))}
-            </div>
-          ))}
-          <button
-            onClick={handleSubmit}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+    <div className="max-w-3xl mx-auto p-6">
+      <h2 className="text-3xl font-bold mb-4 text-center">Your Result</h2>
+
+      <div className="bg-base-200 p-4 rounded-lg shadow mb-6 text-center">
+        <p className="text-xl font-semibold">
+          Score: <span className="text-primary">{scoreOutOf10}</span> / 10
+        </p>
+        <p className="text-lg">Category: {result.category}</p>
+      </div>
+
+      <h3 className="text-2xl font-bold mb-3">Question Review</h3>
+      <div className="space-y-4">
+        {result.answers.map((a, i) => (
+          <div
+            key={i}
+            className={`p-3 rounded border ${
+              a.isCorrect ? "bg-green-100 border-green-400" : "bg-red-100 border-red-400"
+            }`}
           >
-            Submit
-          </button>
-        </>
-      ) : (
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Your Result</h2>
-          <p className="mb-2">
-            Score: <strong>{result.score}</strong> / {result.total}
-          </p>
-          <p className="text-lg text-green-700">
-            Category: {result.category}
-          </p>
-        </div>
-      )}
+            <p className="font-medium">{i + 1}. {a.question || "Question not found"}</p>
+            <p>
+              Your Answer:{" "}
+              <span className={a.isCorrect ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                {a.selectedAnswer ?? "Not Answered"}
+              </span>
+            </p>
+            <p>
+              Correct Answer: <span className="font-semibold">{a.correctAnswer}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <h3 className="text-2xl font-bold mt-8 mb-3">Tips for Improvement</h3>
+      <ul className="list-disc pl-6 space-y-2">
+        {tips.map((tip, i) => <li key={i}>{tip}</li>)}
+      </ul>
+
+      <div className="mt-8 text-center">
+        <Link to="/" className="btn btn-primary">Back to Home</Link>
+      </div>
     </div>
   );
 }

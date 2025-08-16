@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../utils/api";
 import QuestionCard from "../components/QuestionCard";
-import { v4 as uuidv4 } from "uuid"; // for generating unique IDs
+import { v4 as uuidv4 } from "uuid";
 
 export default function TestSelector() {
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
-  const category = query.get("category"); // comes from home page
+  const category = query.get("category") || "general";
 
   const [count, setCount] = useState(5);
   const [target, setTarget] = useState("");
@@ -17,6 +17,7 @@ export default function TestSelector() {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
 
+  // Fetch AI-generated questions
   const fetchQuestions = async () => {
     setLoading(true);
     try {
@@ -24,6 +25,7 @@ export default function TestSelector() {
         `/questions?category=${category}&count=${count}&target=${target || "general"}`
       );
 
+      // Normalize questions
       const normalized = (data.questions || data).map((q) => ({
         _id: q._id || uuidv4(),
         questionText: q.question || q.questionText || "Untitled question",
@@ -32,12 +34,13 @@ export default function TestSelector() {
             ? { text: opt, value: opt }
             : { text: opt.text || opt.value, value: opt.value || opt.text }
         ),
+        correctAnswer: q.correctAnswer || null, // optional, for scoring
       }));
 
       setQuestions(normalized);
       setStarted(true);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching questions:", err);
     } finally {
       setLoading(false);
     }
@@ -49,17 +52,28 @@ export default function TestSelector() {
 
   const handleSubmit = async () => {
     try {
+      const userId = "test-user-123"; // replace with logged-in user
+
+      const formattedAnswers = questions.map((q) => ({
+        quizId: q._id,
+        question: q.questionText,
+        selectedAnswer: answers[q._id] ?? null,
+        correctAnswer: q.correctAnswer ?? null,
+        isCorrect: answers[q._id] === q.correctAnswer,
+      }));
+
       const { data } = await API.post("/results", {
+        userId,
         category,
-        answers,
+        answers: formattedAnswers,
       });
+
       navigate(`/result/${data._id}`);
     } catch (err) {
-      console.error(err);
+      console.error("Error submitting test:", err.response?.data || err.message);
     }
   };
 
-  // Show form before test starts
   if (!started) {
     return (
       <div className="max-w-lg mx-auto mt-10 p-6 border rounded-lg shadow-lg">
@@ -73,7 +87,7 @@ export default function TestSelector() {
             value={count}
             min={1}
             max={20}
-            onChange={(e) => setCount(e.target.value)}
+            onChange={(e) => setCount(Number(e.target.value))}
           />
         </div>
 
@@ -100,16 +114,17 @@ export default function TestSelector() {
     );
   }
 
-  // Show test after questions are generated
-  if (loading) return <p>Loading questions...</p>;
-  if (!questions.length) return <p>No questions available.</p>;
+  if (loading) return <p className="text-center mt-6">Loading questions...</p>;
+  if (!questions.length) return <p className="text-center mt-6">No questions available.</p>;
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6">
       <h2 className="text-2xl mb-4 capitalize">{category} Test</h2>
-      {questions.map((q) => (
-        <QuestionCard key={q._id} question={q} onSelect={handleSelect} />
+
+      {questions.map((q, index) => (
+        <QuestionCard key={`${q._id}-${index}`} question={q} onSelect={handleSelect} />
       ))}
+
       <button
         className="bg-blue-600 text-white px-4 py-2 rounded mt-4"
         onClick={handleSubmit}

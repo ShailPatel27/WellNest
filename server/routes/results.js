@@ -1,63 +1,62 @@
 import express from "express";
-import auth from "../middleware/auth.js";
 import Result from "../models/Result.js";
-import Question from "../models/Question.js";
 
 const router = express.Router();
 
-
-// Save new result
-router.post("/", auth, async (req, res) => {
+// Save test results
+router.post("/", async (req, res) => {
   try {
-    const { category, answers } = req.body;
-    const questionIds = Object.keys(answers);
+    const { userId, category, answers } = req.body;
 
-    // Fetch correct answers
-    const questions = await Question.find({ _id: { $in: questionIds } });
+    if (!userId || !category || !answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: "Invalid request payload" });
+    }
 
-    let score = 0;
-    questions.forEach(q => {
-      if (answers[q._id] === q.correctAnswer) score++;
+    let correctCount = 0;
+    const answerDetails = answers.map((a) => {
+      const isCorrect = a.isCorrect ?? false;
+      if (isCorrect) correctCount++;
+
+      return {
+        quizId: a.quizId,
+        question: a.question || "Question text missing",
+        selectedAnswer: a.selectedAnswer,
+        correctAnswer: a.correctAnswer || null,
+        isCorrect,
+      };
     });
 
-    const newResult = await Result.create({
-      user: req.user.id,
+    const scoreOutOf10 = answers.length
+      ? Math.round((correctCount / answers.length) * 10)
+      : 0;
+
+    const result = new Result({
+      userId,
       category,
-      score,
-      total: questions.length
+      score: correctCount,
+      total: answers.length,
+      scoreOutOf10,
+      answers: answerDetails,
     });
 
-    res.json(newResult);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error saving result" });
+    await result.save();
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error("Error saving result:", error);
+    res.status(500).json({ error: "Failed to save result" });
   }
 });
 
 // Get result by ID
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const result = await Result.findOne({ _id: req.params.id, user: req.user.id });
-    if (!result) return res.status(404).json({ message: "Result not found" });
+    const result = await Result.findById(req.params.id);
+    if (!result) return res.status(404).json({ error: "Result not found" });
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching result" });
-  }
-});
-
-// Get test history
-router.get("/history", auth, async (req, res) => {
-  try {
-    const history = await Result.find({ user: req.user.id }).sort({ createdAt: 1 });
-    const formatted = history.map(r => ({
-      date: r.createdAt,
-      score: r.score,
-      total: r.total,
-      category: r.category
-    }));
-    res.json(formatted);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching history" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch result" });
   }
 });
 
