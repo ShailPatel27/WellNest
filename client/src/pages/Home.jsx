@@ -9,14 +9,14 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 justify-center mt-12 px-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mt-16 px-6">
       
       {/* Mental Health Card */}
       <div
-        className="bg-purple-600 text-white rounded-2xl shadow-xl p-10 flex-1 cursor-pointer hover:scale-105 transform transition-all"
+        className="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-2xl shadow-2xl p-10 cursor-pointer hover:scale-105 hover:shadow-xl transform transition-all"
         onClick={() => handleCardClick("/test-selector?category=mental")}
       >
-        <h2 className="text-3xl font-bold mb-4">Mental Health</h2>
+        <h2 className="text-3xl font-bold mb-4">🧠 Mental Health</h2>
         <p className="text-lg">
           Take quizzes, learn tips, and explore exercises to improve your mental wellness.
         </p>
@@ -24,10 +24,10 @@ export default function Home() {
 
       {/* Physical Health Card */}
       <div
-        className="bg-green-600 text-white rounded-2xl shadow-xl p-10 flex-1 cursor-pointer hover:scale-105 transform transition-all"
+        className="bg-gradient-to-r from-green-500 to-green-700 text-white rounded-2xl shadow-2xl p-10 cursor-pointer hover:scale-105 hover:shadow-xl transform transition-all"
         onClick={() => handleCardClick("/test-selector?category=physical")}
       >
-        <h2 className="text-3xl font-bold mb-4">Physical Health</h2>
+        <h2 className="text-3xl font-bold mb-4">💪 Physical Health</h2>
         <p className="text-lg">
           Access fitness quizzes, health tips, and routines to stay physically active.
         </p>
@@ -35,12 +35,23 @@ export default function Home() {
 
       {/* Chatbot Card */}
       <div
-        className="bg-blue-600 text-white rounded-2xl shadow-xl p-10 flex-1 cursor-pointer hover:scale-105 transform transition-all"
+        className="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-2xl shadow-2xl p-10 cursor-pointer hover:scale-105 hover:shadow-xl transform transition-all"
         onClick={() => handleCardClick("/chatbot")}
       >
-        <h2 className="text-3xl font-bold mb-4">Chatbot</h2>
+        <h2 className="text-3xl font-bold mb-4">🤖 Chatbot</h2>
         <p className="text-lg">
           Talk to our AI chatbot for guidance, tips, or just a friendly conversation.
+        </p>
+      </div>
+
+      {/* Overall Wellness Check Card */}
+      <div
+        className="bg-gradient-to-r from-pink-500 to-red-600 text-white rounded-2xl shadow-2xl p-10 cursor-pointer hover:scale-105 hover:shadow-xl transform transition-all"
+        onClick={() => handleCardClick("/test-selector?category=wellness")}
+      >
+        <h2 className="text-3xl font-bold mb-4">🌿 Wellness Check</h2>
+        <p className="text-lg">
+          Take an overall test that combines mental and physical health for a complete checkup.
         </p>
       </div>
 

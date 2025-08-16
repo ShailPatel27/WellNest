@@ -38,7 +38,8 @@ async function generateWithOpenAI({ category, count, target }) {
   const openai = new OpenAI({ apiKey: openaiApiKey });
 
   const prompt = `
-  Create ${count} well-crafted ${category} questions for ${target} rehabilitation.
+  Create ${count} well-crafted ${category} questions for ${target}.
+  These questions will be to evaluate the user's ${category} health.
 
   Return ONLY valid JSON:
   [
