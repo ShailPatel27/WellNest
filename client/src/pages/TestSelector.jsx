@@ -1,3 +1,4 @@
+// pages/TestSelector.jsx
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../utils/api";
@@ -17,7 +18,7 @@ export default function TestSelector() {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
 
-  // Fetch AI-generated questions
+  // Fetch questions from DB or AI
   const fetchQuestions = async () => {
     setLoading(true);
     try {
@@ -25,17 +26,22 @@ export default function TestSelector() {
         `/questions?category=${category}&count=${count}&target=${target || "general"}`
       );
 
-      // Normalize questions
-      const normalized = (data.questions || data).map((q) => ({
-        _id: q._id || uuidv4(),
-        questionText: q.question || q.questionText || "Untitled question",
-        options: (q.options || []).map((opt) =>
-          typeof opt === "string"
-            ? { text: opt, value: opt }
-            : { text: opt.text || opt.value, value: opt.value || opt.text }
-        ),
-        correctAnswer: q.correctAnswer || null, // optional, for scoring
-      }));
+      const normalized = (data.questions || data).map((q) => {
+        const opts = (q.options || []).map((opt, i) => {
+          const text = typeof opt === "string" ? opt : opt.text || opt.value || "";
+          const value = typeof opt === "string" ? opt : opt.value || opt.text || "";
+          const points = typeof opt === "object" && opt.points != null
+            ? opt.points
+            : i; // 0–3 points
+          return { text, value, points };
+        });
+
+        return {
+          _id: q._id || uuidv4(),
+          questionText: q.question || q.questionText || "Untitled question",
+          options: opts,
+        };
+      });
 
       setQuestions(normalized);
       setStarted(true);
@@ -46,26 +52,35 @@ export default function TestSelector() {
     }
   };
 
-  const handleSelect = (qId, value) => {
-    setAnswers((prev) => ({ ...prev, [qId]: value }));
+  const handleSelect = (qId, value, points) => {
+    setAnswers((prev) => ({ ...prev, [qId]: { value, points } }));
   };
 
   const handleSubmit = async () => {
     try {
-      const userId = "test-user-123"; // replace with logged-in user
+      const userId = "test-user-123"; // replace with real auth user later
 
-      const formattedAnswers = questions.map((q) => ({
-        quizId: q._id,
-        question: q.questionText,
-        selectedAnswer: answers[q._id] ?? null,
-        correctAnswer: q.correctAnswer ?? null,
-        isCorrect: answers[q._id] === q.correctAnswer,
-      }));
+      const formattedAnswers = questions.map((q) => {
+        const answerObj = answers[q._id] || { value: null, points: 0 };
+        return {
+          quizId: q._id,
+          question: q.questionText,
+          selectedAnswer: answerObj.value,
+          points: answerObj.points,
+        };
+      });
+
+      const totalPoints = formattedAnswers.reduce((sum, a) => sum + a.points, 0);
+      const maxPoints = questions.length * 3; // 0–3 scale
+      const scoreOutOf10 = Math.round((totalPoints / maxPoints) * 10);
 
       const { data } = await API.post("/results", {
         userId,
         category,
         answers: formattedAnswers,
+        totalPoints,
+        maxPoints,
+        scoreOutOf10,
       });
 
       navigate(`/result/${data._id}`);
@@ -74,6 +89,7 @@ export default function TestSelector() {
     }
   };
 
+  // Pre-test setup screen
   if (!started) {
     return (
       <div className="max-w-lg mx-auto mt-10 p-6 border rounded-lg shadow-lg">
@@ -122,7 +138,11 @@ export default function TestSelector() {
       <h2 className="text-2xl mb-4 capitalize">{category} Test</h2>
 
       {questions.map((q, index) => (
-        <QuestionCard key={`${q._id}-${index}`} question={q} onSelect={handleSelect} />
+        <QuestionCard
+          key={`${q._id}-${index}`}
+          question={q}
+          onSelect={(value, points) => handleSelect(q._id, value, points)}
+        />
       ))}
 
       <button

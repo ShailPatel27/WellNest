@@ -5,8 +5,8 @@ export default function QuestionCard({ question, onSelect }) {
 
   const options = (question.options || []).map((opt) =>
     typeof opt === "string"
-      ? { text: opt, value: opt }
-      : { text: opt.text || opt.value || opt, value: opt.value || opt.text || opt }
+      ? { text: opt, value: opt, points: 0 }
+      : { text: opt.text || opt.value || opt, value: opt.value || opt.text || opt, points: opt.points || 0 }
   );
 
   const questionId = question._id || question.id || Math.random().toString();
@@ -21,7 +21,7 @@ export default function QuestionCard({ question, onSelect }) {
               type="radio"
               name={questionId}
               value={opt.value}
-              onChange={() => onSelect(questionId, opt.value)}
+              onChange={() => onSelect(opt.value, opt.points)}
             />
             {opt.text}
           </label>

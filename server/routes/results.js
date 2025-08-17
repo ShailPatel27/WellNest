@@ -1,3 +1,4 @@
+// routes/results.js
 import express from "express";
 import Result from "../models/Result.js";
 
@@ -6,37 +7,39 @@ const router = express.Router();
 // Save test results
 router.post("/", async (req, res) => {
   try {
-    const { userId, category, answers } = req.body;
+    const { userId, category, answers, totalPoints, score, total } = req.body;
 
     if (!userId || !category || !answers || !Array.isArray(answers)) {
       return res.status(400).json({ error: "Invalid request payload" });
     }
 
-    let correctCount = 0;
+    // If frontend didn't send totalPoints/score, calculate them
+    let calculatedPoints = 0;
+
     const answerDetails = answers.map((a) => {
-      const isCorrect = a.isCorrect ?? false;
-      if (isCorrect) correctCount++;
+      const pointsObtained = a.points ?? 0;
+      calculatedPoints += pointsObtained;
 
       return {
         quizId: a.quizId,
         question: a.question || "Question text missing",
-        selectedAnswer: a.selectedAnswer,
-        correctAnswer: a.correctAnswer || null,
-        isCorrect,
+        selectedAnswer: a.selectedAnswer || null,
+        points: pointsObtained,
       };
     });
 
-    const scoreOutOf10 = answers.length
-      ? Math.round((correctCount / answers.length) * 10)
-      : 0;
+    const maxPoints = total || answers.length * 3;
+    const finalTotalPoints = totalPoints ?? calculatedPoints;
+    const scoreOutOf10 =
+      score ?? (maxPoints ? Math.round((finalTotalPoints / maxPoints) * 10) : 0);
 
     const result = new Result({
       userId,
       category,
-      score: correctCount,
-      total: answers.length,
-      scoreOutOf10,
       answers: answerDetails,
+      totalPoints: finalTotalPoints,
+      maxPoints,
+      scoreOutOf10,
     });
 
     await result.save();

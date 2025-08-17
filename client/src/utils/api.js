@@ -1,3 +1,4 @@
+// utils/api.js
 import axios from "axios";
 
 const API = axios.create({
@@ -11,5 +12,11 @@ API.interceptors.request.use(config => {
   }
   return config;
 });
+
+// --- AI routes ---
+export const getAITips = async (answers) => {
+  const { data } = await API.post("/ai/tips", { answers });
+  return data;
+};
 
 export default API;

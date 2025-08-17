@@ -37,12 +37,14 @@ import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/questions.js";
 import resultRoutes from "./routes/results.js";
 import chatbotRoutes from "./routes/chatbot.js";
+import aiRoutes from "./routes/ai.js"; // <-- new AI route
 
 // --- Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/ai", aiRoutes); // <-- mount AI route
 
 // --- 404 handler
 app.use((req, res) => {
