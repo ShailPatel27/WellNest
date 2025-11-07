@@ -144,7 +144,7 @@ export default function Profile() {
         <p>No history yet. Take a test to get started!</p>
       ) : (
         <>
-          <div id="graphs" className="space-y-4" style={{ backgroundColor: "#ffffff", padding: 16, borderRadius: 8 }}>
+          <div id="graphs" className="space-y-4" style={{padding: 16, borderRadius: 8}}>
             <Chart dataPoints={getChartData("mental")} dataKey="score" label="Mental Health" />
             <Chart dataPoints={getChartData("physical")} dataKey="score" label="Physical Health" />
             <Chart dataPoints={getChartData("general")} dataKey="score" label="General Test" />
