@@ -1,43 +1,23 @@
-import OpenAI from "openai";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-
-function getClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY missing");
-  return new OpenAI({ apiKey });
-}
-
-function cleanJSON(text) {
-  return (text || "")
-    .replace(/```json\s*/gi, "")
-    .replace(/```/g, "")
-    .trim();
-}
-
-function safeParseJSON(str, fallbackKey = "data") {
-  try {
-    return JSON.parse(cleanJSON(str));
-  } catch {
-    return { [fallbackKey]: cleanJSON(str) };
-  }
-}
-
 export async function generateQuestions({ category, count, target }) {
   const openai = getClient();
 
   const prompt = `
   Create ${count} well-crafted ${category} questions for ${target} rehabilitation.
 
-  Return ONLY valid JSON:
+  Each question must have multiple-choice answers with a scoring system.
+  Higher scores should represent healthier or more positive responses, while lower
+  or zero scores should represent unhealthy or negative responses.
+
+  Return ONLY valid JSON in this format:
   [
     {
       "question": "string",
-      "options": ["A", "B", "C", "D"],
-      "answer": 0
+      "options": [
+        { "text": "string", "points": number },
+        { "text": "string", "points": number },
+        { "text": "string", "points": number },
+        { "text": "string", "points": number }
+      ]
     }
   ]
   `;

@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function TestPage() {
+  const { user } = useAuth(); // get the logged-in user
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -38,7 +40,10 @@ export default function TestPage() {
 
   async function handleSubmit() {
     try {
-      const userId = "test-user-123"; // replace with real user ID
+      if (!user?._id) {
+        console.error("No user ID found. Make sure the user is logged in.");
+        return;
+      }
 
       const formattedAnswers = questions.map((q) => ({
         quizId: q._id,
@@ -46,7 +51,7 @@ export default function TestPage() {
       }));
 
       const { data } = await API.post("/results", {
-        userId,
+        userId: user._id, // use dynamic user ID
         category,
         answers: formattedAnswers,
       });

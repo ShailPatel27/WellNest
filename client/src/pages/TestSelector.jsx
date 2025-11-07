@@ -1,11 +1,13 @@
-// pages/TestSelector.jsx
+// src/pages/TestSelector.jsx
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../utils/api";
 import QuestionCard from "../components/QuestionCard";
 import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "../context/AuthContext";
 
 export default function TestSelector() {
+  const { user } = useAuth(); // get logged-in user
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
@@ -18,7 +20,7 @@ export default function TestSelector() {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
 
-  // Fetch questions from DB or AI
+  // Fetch questions
   const fetchQuestions = async () => {
     setLoading(true);
     try {
@@ -30,9 +32,7 @@ export default function TestSelector() {
         const opts = (q.options || []).map((opt, i) => {
           const text = typeof opt === "string" ? opt : opt.text || opt.value || "";
           const value = typeof opt === "string" ? opt : opt.value || opt.text || "";
-          const points = typeof opt === "object" && opt.points != null
-            ? opt.points
-            : i; // 0–3 points
+          const points = typeof opt === "object" && opt.points != null ? opt.points : i;
           return { text, value, points };
         });
 
@@ -58,7 +58,11 @@ export default function TestSelector() {
 
   const handleSubmit = async () => {
     try {
-      const userId = "test-user-123"; // replace with real auth user later
+      const userId = user?._id || user?.id || user?.userId;
+      if (!userId) {
+        alert("No user ID found. Make sure the user is logged in.");
+        return;
+      }
 
       const formattedAnswers = questions.map((q) => {
         const answerObj = answers[q._id] || { value: null, points: 0 };
@@ -71,7 +75,7 @@ export default function TestSelector() {
       });
 
       const totalPoints = formattedAnswers.reduce((sum, a) => sum + a.points, 0);
-      const maxPoints = questions.length * 3; // 0–3 scale
+      const maxPoints = questions.length * 3;
       const scoreOutOf10 = Math.round((totalPoints / maxPoints) * 10);
 
       const { data } = await API.post("/results", {
@@ -89,7 +93,6 @@ export default function TestSelector() {
     }
   };
 
-  // Pre-test setup screen
   if (!started) {
     return (
       <div className="max-w-lg mx-auto mt-10 p-6 border rounded-lg shadow-lg">

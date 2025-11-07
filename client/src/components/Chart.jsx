@@ -1,43 +1,31 @@
-import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from "chart.js";
+// components/Chart.jsx
+import React from "react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-export default function Chart({ dataPoints, label }) {
-  const labels = dataPoints.map(d => new Date(d.date).toLocaleDateString());
-  const scores = dataPoints.map(d => d.score);
-
+export default function Chart({ dataPoints, dataKey, label }) {
   return (
-    <Line
-      data={{
-        labels,
-        datasets: [
-          {
-            label,
-            data: scores,
-            fill: false,
-            borderColor: "rgb(75, 192, 192)",
-            tension: 0.1
-          }
-        ]
-      }}
-    />
+    <div className="bg-base-200 p-4 rounded-xl shadow mb-6">
+      <h2 className="text-lg font-semibold mb-2">{label}</h2>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart
+          data={dataPoints}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(str) => new Date(str).toLocaleDateString()}
+          />
+          <YAxis />
+          <Tooltip
+            labelFormatter={(label) =>
+              new Date(label).toLocaleDateString()
+            }
+          />
+          <Legend />
+          <Line type="monotone" dataKey={dataKey} stroke="#8884d8" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

@@ -4,7 +4,25 @@ import Result from "../models/Result.js";
 
 const router = express.Router();
 
-// Save test results
+// ✅ Get all results for a user (history)
+router.get("/history/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const results = await Result.find({ userId }).sort({ createdAt: -1 });
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching history:", error);
+    res.status(500).json({ error: "Failed to fetch history" });
+  }
+});
+
+// ✅ Save test results
 router.post("/", async (req, res) => {
   try {
     const { userId, category, answers, totalPoints, score, total } = req.body;
@@ -51,14 +69,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get result by ID
+// ✅ Get result by ID (keep this LAST so it doesn’t clash with /history)
 router.get("/:id", async (req, res) => {
   try {
     const result = await Result.findById(req.params.id);
     if (!result) return res.status(404).json({ error: "Result not found" });
     res.json(result);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching result:", error);
     res.status(500).json({ error: "Failed to fetch result" });
   }
 });

@@ -71,8 +71,8 @@ export default function ResultPage() {
   // ✅ Use DaisyUI tokens for consistent theming
   const getColor = (points) => {
     if (points >= 3) return "bg-success/20 border-success text-success";
-    if (points === 2) return "bg-warning/20 border-warning text-warning";
-    if (points === 1) return "bg-accent/20 border-accent text-accent";
+    if (points === 2) return "bg-accent/20 border-accent text-accent";
+    if (points === 1) return "bg-warning/20 border-warning text-warning";
     return "bg-error/20 border-error text-error";
   };
 
@@ -114,7 +114,7 @@ export default function ResultPage() {
       </div>
 
       <h3 className="text-2xl font-bold mt-10 mb-4 flex items-center justify-center gap-2">
-        <Lightbulb className="w-6 h-6 text-warning" /> Tips for Improvement
+        <Lightbulb className="w-6 h-6 text-accent" /> Tips for Improvement
       </h3>
 
       {tipsLoading ? (
